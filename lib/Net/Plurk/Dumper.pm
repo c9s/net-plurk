@@ -1,11 +1,15 @@
 package Net::Plurk::Dumper;
-
+use JavaScript::SpiderMonkey;
+use Data::Dumper::Simple;
+use JSON;
+use base qw(Class::Accessor::Fast);
+__PACKAGE__->mk_accessors( qw(id settings js json_code) );
 use warnings;
 use strict;
 
 =head1 NAME
 
-Net::Plurk::Dumper - The great new Net::Plurk::Dumper!
+Net::Plurk::Dumper - Dump plurks
 
 =head1 VERSION
 
@@ -24,8 +28,10 @@ Perhaps a little code snippet.
 
     use Net::Plurk::Dumper;
 
-    my $foo = Net::Plurk::Dumper->new();
-    ...
+    my $p_dumper = Net::Plurk::Dumper->new(
+            id => 'c9s'
+    );
+
 
 =head1 EXPORT
 
@@ -34,18 +40,86 @@ if you don't export anything, such as for a purely object-oriented module.
 
 =head1 FUNCTIONS
 
-=head2 function1
-
 =cut
 
-sub function1 {
+my $base_url = 'http://www.plurk.com/';
+
+sub new {
+    my $class = shift;
+    my %args = @_;
+
+    my $js = JavaScript::SpiderMonkey->new();
+    $js->init();    # Initialize Runtime/Context
+
+    my $self = $class->SUPER::new({ js => $js , %args });
+
+    $self->js->function_set( "set_accessor", sub {   
+        my ( $accessor_name, $js_str ) = @_;
+        $self->$accessor_name( from_json( $data_obj ) );
+    } );
+
+    $self->json_code( $self->_load_json_js );
+
+    my $js_settings = $self->fetch_settings;
+    $self->_eval_json( $js_settings, 'SETTINGS' , 'settings' );
+
+    return $self;
 }
 
-=head2 function2
+sub fetch_plurks {
+    my $self = shift;
+    my $settings = $self->{settings};
+    return $self->_fetch_plurks( user_id => $settings->{user_id}  ,  offset => $settings->{offset} );
+}
 
-=cut
+sub _fetch_plurks {
+    my $self = shift;
+    my %args = @_;
+    my $url = '';
 
-sub function2 {
+}
+
+sub _eval_json {
+    my ( $self, $js_code, $varname, $accessor_name ) = @_;
+    my $json_code = $self->json_code;
+    my $rc = $self->js->eval( qq!
+        $json_code
+
+        $js_code
+
+        var str = JSON.stringify( $varname );
+        set_accessor( '$accessor_name' ,  str );
+    !);
+
+}
+
+sub fetch_settings {
+    my $self = shift;
+    
+    my $url = $base_url . $self->id;
+    require LWP::UserAgent;
+    my $ua = LWP::UserAgent->new;
+    $ua->timeout(10);
+
+    my $response = $ua->get( $url );
+    if ($response->is_success) {
+        my $c = $response->decoded_content;  # or whatever
+        my ($head) = $c =~ m{<head>(.*?)</head>}smi;
+        pos($head)=0;
+        my ($js_setting) = ($head =~ m{<script.*?>(.*?)</script>}smi );
+        return $js_setting;
+    }
+    else {
+        die $response->status_line;
+    }
+}
+
+sub _load_json_js {
+    open my $fh, '< json.js';
+    local $/;
+    my $json = <$fh>;
+    close $fh;
+    return $json;
 }
 
 =head1 AUTHOR
