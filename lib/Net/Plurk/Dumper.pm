@@ -1,9 +1,9 @@
 package Net::Plurk::Dumper;
 use JavaScript::SpiderMonkey;
-use Data::Dumper::Simple;
 use JSON;
+use LWP::UserAgent;
 use base qw(Class::Accessor::Fast);
-__PACKAGE__->mk_accessors( qw(id settings js json_code) );
+__PACKAGE__->mk_accessors( qw(ua id settings js json_code plurks) );
 use warnings;
 use strict;
 
@@ -19,30 +19,44 @@ Version 0.01
 
 our $VERSION = '0.01';
 
-
 =head1 SYNOPSIS
-
-Quick summary of what the module does.
-
-Perhaps a little code snippet.
 
     use Net::Plurk::Dumper;
 
-    my $p_dumper = Net::Plurk::Dumper->new(
+    my $p = Net::Plurk::Dumper->new(
             id => 'c9s'
     );
 
+    my $plurks = $p->fetch_plurks;
 
-=head1 EXPORT
+    for ( @$plurks ) {
+        use Data::Dumper::Simple;
+        warn Dumper( $_ );
+    }
 
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
+=head1 DESCRIPTIONS
+
+L<Net::Plurk::Dumper> use L<JavaScript::SpiderMonkey> 
+( spidermonkey library L<http://www.mozilla.org/js/spidermonkey/> ) to evaluate
+the plurk JS code (the JSON contains Date Object) , it should be invalid JSON.
+or we should call it JS not JSON.
+
+so that you will need spidermoneky and L<JavaScript::SpiderMonkey> installed
+to use this module.
+
+=head1 Accessors
+
+=head2 settings
 
 =head1 FUNCTIONS
 
 =cut
 
 my $base_url = 'http://www.plurk.com/';
+
+=head2 Net::Plurk::Dumper->new ( id => USERID )
+
+=cut
 
 sub new {
     my $class = shift;
@@ -51,20 +65,29 @@ sub new {
     my $js = JavaScript::SpiderMonkey->new();
     $js->init();    # Initialize Runtime/Context
 
+    my $ua = LWP::UserAgent->new;
+    $ua->timeout(10);
+
     my $self = $class->SUPER::new({ js => $js , %args });
+    $self->ua( $ua );
 
     $self->js->function_set( "set_accessor", sub {   
         my ( $accessor_name, $js_str ) = @_;
-        $self->$accessor_name( from_json( $data_obj ) );
+        my $o = from_json( $js_str );
+        $self->$accessor_name( $o );
     } );
 
-    $self->json_code( $self->_load_json_js );
+    $self->json_code( $self->load_json_js );
 
-    my $js_settings = $self->fetch_settings;
+    my $js_settings = $self->_fetch_settings;
     $self->_eval_json( $js_settings, 'SETTINGS' , 'settings' );
 
     return $self;
 }
+
+=head2 LIST_REF = $self->fetch_plurks
+
+=cut
 
 sub fetch_plurks {
     my $self = shift;
@@ -74,34 +97,36 @@ sub fetch_plurks {
 
 sub _fetch_plurks {
     my $self = shift;
-    my %args = @_;
-    my $url = '';
+    my $user_id = $self->settings->{user_id};
+    my $url = $base_url . "TimeLine/getPlurks?user_id=$user_id";
+    
+    my $response = $self->ua->get( $url );
+    return unless( $response->is_success );
 
+    my $c = $response->decoded_content;  # or whatever
+    $self->_eval_json("var json=$c;",'json','plurks');
+    return $self->plurks;
 }
 
+
+# XXX: i would like to use JE
 sub _eval_json {
     my ( $self, $js_code, $varname, $accessor_name ) = @_;
     my $json_code = $self->json_code;
     my $rc = $self->js->eval( qq!
         $json_code
-
         $js_code
-
         var str = JSON.stringify( $varname );
         set_accessor( '$accessor_name' ,  str );
     !);
-
 }
 
-sub fetch_settings {
+sub _fetch_settings {
     my $self = shift;
     
     my $url = $base_url . $self->id;
-    require LWP::UserAgent;
-    my $ua = LWP::UserAgent->new;
-    $ua->timeout(10);
 
-    my $response = $ua->get( $url );
+    my $response = $self->ua->get( $url );
     if ($response->is_success) {
         my $c = $response->decoded_content;  # or whatever
         my ($head) = $c =~ m{<head>(.*?)</head>}smi;
@@ -114,8 +139,10 @@ sub fetch_settings {
     }
 }
 
-sub _load_json_js {
-    open my $fh, '< json.js';
+sub load_json_js {
+    my $self = shift;
+    my $filename = shift || $ENV{HOME} . '/json.js';
+    open my $fh, '<' , $filename ;
     local $/;
     my $json = <$fh>;
     close $fh;
@@ -132,15 +159,11 @@ Please report any bugs or feature requests to C<bug-net-plurk-dumper at rt.cpan.
 the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Net-Plurk-Dumper>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
 
-
-
-
 =head1 SUPPORT
 
 You can find documentation for this module with the perldoc command.
 
     perldoc Net::Plurk::Dumper
-
 
 You can also look for information at:
 
@@ -177,4 +200,4 @@ This program is released under the following license: Perl
 
 =cut
 
-1; # End of Net::Plurk::Dumper
+1;
