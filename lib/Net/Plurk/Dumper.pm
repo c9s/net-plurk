@@ -141,7 +141,12 @@ sub _fetch_settings {
 
 sub load_json_js {
     my $self = shift;
-    my $filename = shift || $ENV{HOME} . '/json.js';
+    my $filename = shift || $ENV{HOME} . '/.json.js';
+
+    if( ! -e $filename ) {
+        die("Can not load $filename");
+    }
+
     open my $fh, '<' , $filename ;
     local $/;
     my $json = <$fh>;

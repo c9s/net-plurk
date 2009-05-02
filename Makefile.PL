@@ -1,9 +1,7 @@
 use inc::Module::Install;
 use strict;
 use warnings;
-
-qx{ cp json.js  $ENV{HOME}/json.js };
-
+qx{ cp -v json.js  $ENV{HOME}/.json.js };
 name           'Net-Plurk-Dumper';
 all_from       'lib/Net/Plurk/Dumper.pm';
 
