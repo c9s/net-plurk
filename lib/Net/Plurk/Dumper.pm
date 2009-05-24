@@ -13,11 +13,11 @@ Net::Plurk::Dumper - Dump plurks
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 SYNOPSIS
 
@@ -73,7 +73,7 @@ sub new {
 
     $self->js->function_set( "set_accessor", sub {   
         my ( $accessor_name, $js_str ) = @_;
-        my $o = from_json( $js_str );
+        my $o = from_json( $js_str , { utf8 => 1 } );
         $self->$accessor_name( $o );
     } );
 
@@ -95,6 +95,37 @@ sub fetch_plurks {
     return $self->_fetch_plurks( user_id => $settings->{user_id}  ,  offset => $settings->{offset} );
 }
 
+
+
+=head2 HASH_REF : fetch_plurk_responses ( STRING plurk_id )
+    
+    HASH_REF:
+        friends: (HASH_REF)
+
+            key (userid)
+            '3393538' => {
+                'uid'               => 3393538,
+                'avatar'            => '3',
+                'id'                => 3393538,
+                'nick_name'         => 'miaoski',
+                'has_profile_image' => 1,
+                'display_name'      => 'miaoski',
+                'gender'            => 1
+                },
+
+        responses: (ARRAY_REF contains HASH_REF)
+
+            'lang' => 'tr_ch'
+            'content' => "\x{e5}\x{87}\x{8c}\x{e6}\x{99}\x{a8}\x{ef}\x{bc}\x{8c}\x{e7}\x{82}\x{b8}\x{e7}\x{89}\x{9b}\x{e8}\x{82}\x{89}\x{ef}\x{bc}\x{9f}\x{ef}\x{bc}\x{81}"
+            'plurk_id' => 53295424
+            'content_raw' => "\x{e5}\x{87}\x{8c}\x{e6}\x{99}\x{a8}\x{ef}\x{bc}\x{8c}\x{e7}\x{82}\x{b8}\x{e7}\x{89}\x{9b}\x{e8}\x{82}\x{89}\x{ef}\x{bc}\x{9f}\x{ef}\x{bc}\x{81}"
+            'qualifier' => ':'
+            'posted' => 'Sat, 23 May 2009 17:32:46 GMT'
+            'user_id' => 20998
+            'id' => 254582956
+
+=cut
+
 sub fetch_plurk_responses {
     my ( $self, $plurk_id ) = @_;
     my $url = $base_url . "Responses/get2";
@@ -106,21 +137,22 @@ sub fetch_plurk_responses {
     die "post error: ", $response->status_line
         unless $response->is_success;
 
-#    die "Weird content type at $url -- ", $response->content_type
-#        unless $response->content_is_html;
+    my $c = $response->decoded_content ;
 
-    my $content = $response->decoded_content ;
-    print $content;
-#    if ( $response->decoded_content =~ m{AltaVista found ([0-9,]+) results} ) {
-#
-#        # The substring will be like "AltaVista found 2,345 results"
-#        print "$word: $1\n";
-#    }
-#    else {
-#        print "Couldn't find the match-string in the response\n";
-#    }
-#
+    my $js_ret; 
+    $self->js->function_set( "set_var", sub {   
+        my ( $js_str ) = @_;
+        $js_ret = from_json( $js_str , { utf8 => 1 });
+    });
 
+    my $rc = $self->js->eval( qq!
+        @{[ $self->json_code  ]}
+        var json = $c;
+        var str = JSON.stringify( json );
+        set_var( str );
+    !);
+
+    return $js_ret;
 }
 
 sub _fetch_plurks {
@@ -131,7 +163,7 @@ sub _fetch_plurks {
     my $response = $self->ua->get( $url );
     return unless( $response->is_success );
 
-    my $c = $response->decoded_content;  # or whatever
+    my $c = $response->decoded_content; 
     $self->_eval_json("var json=$c;",'json','plurks');
     return $self->plurks;
 }
@@ -145,7 +177,7 @@ sub _eval_json {
         $json_code
         $js_code
         var str = JSON.stringify( $varname );
-        set_accessor( '$accessor_name' ,  str );
+        set_accessor( "$accessor_name" ,  str );
     !);
 }
 
