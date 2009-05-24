@@ -13,11 +13,11 @@ Net::Plurk::Dumper - Dump plurks
 
 =head1 VERSION
 
-Version 0.02
+Version 0.03
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 =head1 SYNOPSIS
 
@@ -86,6 +86,24 @@ sub new {
 }
 
 =head2 LIST_REF = $self->fetch_plurks
+
+    LIST_REF contains HASH_REF
+
+        'plurk_type' => 2,
+        'lang' => 'tr_ch',
+        'content' => 
+        'plurk_id' => 53031904,
+        'responses_seen' => 0,
+        'no_comments' => 0,
+        'limited_to' => undef,
+        'content_raw' => 
+        'response_count' => 11,
+        'qualifier' => 'says',
+        'posted' => 'Sat, 23 May 2009 01:58:09 GMT',
+        'is_unread' => 0,
+        'user_id' => 3158365,
+        'owner_id' => 3158365,
+        'id' => 53031904
 
 =cut
 
