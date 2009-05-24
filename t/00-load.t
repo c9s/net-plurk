@@ -11,3 +11,6 @@ my $p = Net::Plurk::Dumper->new( id => 'c9s');
 ok( $p );
 my $plurks = $p->fetch_plurks;
 ok( $plurks );
+use Data::Dumper::Simple;
+warn Dumper( $plurks );
+

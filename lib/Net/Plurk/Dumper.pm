@@ -95,6 +95,34 @@ sub fetch_plurks {
     return $self->_fetch_plurks( user_id => $settings->{user_id}  ,  offset => $settings->{offset} );
 }
 
+sub fetch_plurk_responses {
+    my ( $self, $plurk_id ) = @_;
+    my $url = $base_url . "Responses/get2";
+    my $response = $self->ua->post( $url , {
+        from_response => 0,
+        plurk_id => $plurk_id ,  #plurk id
+    });
+
+    die "post error: ", $response->status_line
+        unless $response->is_success;
+
+#    die "Weird content type at $url -- ", $response->content_type
+#        unless $response->content_is_html;
+
+    my $content = $response->decoded_content ;
+    print $content;
+#    if ( $response->decoded_content =~ m{AltaVista found ([0-9,]+) results} ) {
+#
+#        # The substring will be like "AltaVista found 2,345 results"
+#        print "$word: $1\n";
+#    }
+#    else {
+#        print "Couldn't find the match-string in the response\n";
+#    }
+#
+
+}
+
 sub _fetch_plurks {
     my $self = shift;
     my $user_id = $self->settings->{user_id};
