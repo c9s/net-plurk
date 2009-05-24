@@ -3,6 +3,8 @@ use strict;
 use warnings;
 use Net::Plurk::Dumper;
 no warnings "all";
+no strict "vars";
+
 
 
 use Getopt::Long;

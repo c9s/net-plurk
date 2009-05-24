@@ -11,10 +11,6 @@ my $p = Net::Plurk::Dumper->new( id => 'jserv');
 ok( $p );
 my $plurks = $p->fetch_plurks;
 ok( $plurks );
-use Data::Dumper::Simple;
-warn Dumper( $plurks );
-
-
 
 my $plurk_res = $p->fetch_plurk_responses( $plurks->[0]->{plurk_id} );
 ok( defined $plurk_res->{responses} , 'get responses' );
