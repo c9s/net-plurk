@@ -2,27 +2,45 @@
 use strict;
 use warnings;
 use Net::Plurk::Dumper;
+no warnings "all";
 
 
+use Getopt::Long;
+my ( $plurk_id );
+GetOptions( 'id=s' => \$plurk_id );
 
-my $p = Net::Plurk::Dumper->new( id => 'jserv');
+unless ( $plurk_id ) {
+    print <<END
+    Usage:  
+        perl -Ilib bin/export-plurk --id=your_plurk_id
+
+END
+}
+
+binmode STDOUT,":utf8";
+
+my $p = Net::Plurk::Dumper->new( id => $plurk_id );
 my $plurks = $p->fetch_plurks;
+
+print "get " , scalar( @$plurks ) , " items \n";
 
 for my $plurk ( @$plurks ) {
 
-    my $plurk_res = $p->fetch_plurk_responses( $plurks->[0]->{plurk_id} );
+    print $plurk->{content_raw} . "\n";
+
+    my $plurk_res = $p->fetch_plurk_responses( $plurk->{plurk_id} );
+    my $friends = $plurk_res->{friends};
+
     for my $response ( @{ $plurk_res->{responses} }  ) {
+
+        print " " x 4;
+        # print $friends->{  $response->{user_id}  }->{display_name};
+        print $friends->{  $response->{user_id}  }->{nick_name};
+        print ": ";
+        print $response->{content_raw} . "\n";
 
     }
 }
-ok( defined $plurk_res->{responses} , 'get responses' );
-ok( defined $plurk_res->{friends}   , 'get friends' );
-
-$plurk_res = $p->fetch_plurk_responses( $plurks->[0]->{plurk_id} );
-ok( defined $plurk_res->{responses} , 'get responses' );
-ok( defined $plurk_res->{friends}   , 'get friends');
-
-
 
 
 

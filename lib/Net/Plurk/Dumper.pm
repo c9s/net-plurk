@@ -163,12 +163,14 @@ sub fetch_plurk_responses {
         $js_ret = from_json( $js_str , { utf8 => 1 });
     });
 
+    eval  {
     my $rc = $self->js->eval( qq!
         @{[ $self->json_code  ]}
         var json = $c;
         var str = JSON.stringify( json );
         set_var( str );
     !);
+    };
 
     return $js_ret;
 }
@@ -191,12 +193,14 @@ sub _fetch_plurks {
 sub _eval_json {
     my ( $self, $js_code, $varname, $accessor_name ) = @_;
     my $json_code = $self->json_code;
+    eval {
     my $rc = $self->js->eval( qq!
         $json_code
         $js_code
         var str = JSON.stringify( $varname );
         set_accessor( "$accessor_name" ,  str );
     !);
+    };
 }
 
 sub _fetch_settings {
