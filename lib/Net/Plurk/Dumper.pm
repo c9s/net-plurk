@@ -176,6 +176,8 @@ sub fetch_plurks {
     return $self->_fetch_plurks($args);
 }
 
+# user_id 
+# user_ids [ 334195... , ]
 sub _fetch_plurks {
     my ($self, $args ) = @_;
     my $url      = "$base_url/TimeLine/getPlurks";
@@ -198,6 +200,17 @@ sub _fetch_plurks {
     return $self->get_js_json( $c );
 }
 
+
+# http://www.plurk.com/Poll/getResponsesN/3341956
+#
+# plurk_ids :
+#     vwl4y,vt3fv,vqn0q,vo8aq,vww7n,vnv2v,vwjko,vvspl,vszkr,vvcwu,vwj6o,vsg85,vs8pz,vqwx8,vwcha,vu3hx,vrdx3
+#     ,vpliw,vtanu,vqycf,ven9b,vvgw4,vt4cn,vkgnn,vu7va,vqons,vtqhl,vkndm,v2jiz,vquzg,vwg5z,vqy4n,vwhnj,vr6ul
+#     ,vw9da,vw4o6,vwc51,vx6k8,vscc9,vtrb6,vt403,vx6kk,vwqdm,vxfyv,vw1vw,vokum,vpi1b,vxi1c,vnsg3,vwvx0,vvudy
+#     ,vx255,vve6w,vsuxo,vwxi5,vxig0,vit2a,vsdye,vwcc1,vwa7i,vtf3l,vmo50,vug8l,vs8ty,vmyt5,vw3i3,vvgsq,vh7em
+#     ,vor7j,vpghv,vpvid,vvsg7,vwe6h,urpou,vrwjc,vw53m,vufgz,vja3b,vwtzt,vtrib,vwezi,vs6ht,vr2bf,vst0n,vp889
+#     ,vxicn,vqlm6,vwws1,vqigj,vqi2f,vkhko,vkpha,vtbdh,vsetc,vvhfm,vv5kz,vvx8k,vvnd7,vnea8,vrvv5,vtj4j,vuwig
+#     ,ve0j4,vsobm,vjrj8,vxdt7,vwzlb,vq
 
 sub fetch_userdata {
     my ( $self, $user_id ) = @_;
