@@ -4,10 +4,22 @@ use JSON;
 use LWP::UserAgent;
 use HTTP::Cookies;
 
-# use Moose;
+use Moose;
 
-use base qw(Class::Accessor::Fast);
-__PACKAGE__->mk_accessors( qw(ua id friends settings js json_code plurks debug) );
+# use base qw(Class::Accessor::Fast);
+# __PACKAGE__->mk_accessors( qw(id json_code debug) );
+
+# Moose::Util::TypeConstraints
+
+has 'id'        => ( is => 'rw', isa => 'Str' );
+has 'json_code' => ( is => 'rw', isa => 'Str' );
+has 'debug'     => ( is => 'rw', isa => 'Bool' );
+
+has 'ua' => ( is => 'rw', isa => 'LWP::UserAgent' );
+has 'js' => ( is => 'rw', isa => 'JavaScript::SpiderMonkey' );
+
+has 'friends'  => ( is => 'rw', isa => 'HashRef' );
+has 'settings' => ( is => 'rw', isa => 'HashRef' );
 
 use warnings;
 use strict;
@@ -66,12 +78,12 @@ my $base_url = 'http://www.plurk.com';
 sub new {
     my $class = shift;
     my %args = @_;
+    my $self = $class->SUPER::new({ %args });
 
     my $js = JavaScript::SpiderMonkey->new();
     $js->init();    # Initialize Runtime/Context
 
-    my $self = $class->SUPER::new({ js => $js , %args });
-
+    $self->js( $js );
     my $cookie_jar = HTTP::Cookies->new(
         file => "$ENV{HOME}/.plurk_cookies.dat",
         autosave => 1,
@@ -186,6 +198,32 @@ sub _fetch_plurks {
     return $self->get_js_json( $c );
 }
 
+
+sub fetch_userdata {
+    my ( $self, $user_id ) = @_;
+    my $url = "$base_url/Users/getUserData";
+    my $response = $self->ua->post( $url , {
+        page_uid => $user_id , 
+    });
+    die "post error: ", $response->status_line
+        unless $response->is_success;
+    my $c = $response->decoded_content ;
+    return $self->get_js_json( $c );
+}
+
+# post:
+#   known_friends   
+#   ["3123451","20998","40008","3114347","3121484","21070","186992","3145970","3127252","765208","3137755"
+#   ,"753660","3158365"]
+
+#{"users": {"3583618": {"display_name": "VickiChen", "uid": 3583618, "gender": 0, "nick_name": "VickiChen"
+#, "has_profile_image": 1, "id": 3583618, "avatar": "8"}, "3165699": {"display_name": "bluegina", "uid"
+#: 3165699, "gender": 0, "nick_name": "bluegi
+sub fetch_owner_profile_data {
+    my $self = shift;
+
+}
+
 =head2 HASH_REF : fetch_plurk_responses ( STRING plurk_id )
     
     HASH_REF:
@@ -231,17 +269,6 @@ sub fetch_plurk_responses {
     return $self->get_js_json( $c );
 }
 
-sub fetch_userdata {
-    my ( $self, $user_id ) = @_;
-    my $url = "$base_url/Users/getUserData";
-    my $response = $self->ua->post( $url , {
-        page_uid => $user_id , 
-    });
-    die "post error: ", $response->status_line
-        unless $response->is_success;
-    my $c = $response->decoded_content ;
-    return $self->get_js_json( $c );
-}
 
 
 sub load_json_js {

@@ -2,8 +2,6 @@
 use strict;
 use warnings;
 use Net::Plurk::Dumper;
-no warnings "all";
-no strict "vars";
 
 
 
@@ -26,14 +24,19 @@ END
 binmode STDOUT,":utf8";
 
 my $p = Net::Plurk::Dumper->new( id => $plurk_id , password => $passwd , debug => 1 );
+
+my $p_friends = $p->friends;
+
+print join("\n", keys %$p_friends );
+
 my $plurks = $p->fetch_plurks;
 
 print "get " , scalar( @$plurks ) , " items \n";
 
 for my $plurk ( @$plurks ) {
 
-
-    print $plurk->{nick_name} . ": " . $plurk->{content_raw} . "\n";
+    print $plurk->{user_id};
+    print  ": " . $plurk->{content_raw} . "\n";
 
     my $plurk_res = $p->fetch_plurk_responses( $plurk->{plurk_id} );
     my $friends = $plurk_res->{friends};
