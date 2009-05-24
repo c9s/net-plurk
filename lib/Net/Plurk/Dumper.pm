@@ -71,23 +71,34 @@ sub new {
     my $self = $class->SUPER::new({ js => $js , %args });
     $self->ua( $ua );
 
-    $self->js->function_set( "set_accessor", sub {   
-        my ( $accessor_name, $js_str ) = @_;
-        my $o = from_json( $js_str , { utf8 => 1 } );
-        $self->$accessor_name( $o );
-    } );
+    $self->js->function_set( "get_json_var", sub {   
+        $self->{js_ret} = from_json( $_[0] , { utf8 => 1 });
+    });
 
-    $self->json_code( $self->load_json_js );
+    $self->js->function_set( "get_var" , sub {
+        $self->{js_ret} = $_[0];
+    });
+
+    $self->json_code( $self->read_json_js );
+    $self->load_json_js;
 
     my $js_settings = $self->_fetch_settings;
-    $self->_eval_json( $js_settings, 'SETTINGS' , 'settings' );
-
+    $self->js->eval(qq| 
+            $js_settings;
+            var str = JSON.stringify( SETTINGS );
+            get_json_var(str);
+    |);
+    $self->settings( $self->{js_ret} );
     return $self;
 }
 
-=head2 LIST_REF = $self->fetch_plurks
+=head2 LIST_REF fetch_plurks HASHREF Arguments
 
-    LIST_REF contains HASH_REF
+    Arguments:
+        user_id:
+        offset:
+
+    the returned LIST_REF contains HASH_REF
 
         'plurk_type' => 2,
         'lang' => 'tr_ch',
@@ -110,12 +121,34 @@ sub new {
 sub fetch_plurks {
     my ( $self, $args ) = @_;
     my $settings = $self->{settings};
+    $args ||= {};
     $args->{user_id} ||= $settings->{user_id};
-    $args->{offset}  ||= $settings->{offset};
-    return $self->_fetch_plurks(%$args);
+    return $self->_fetch_plurks($args);
 }
 
+sub _fetch_plurks {
+    my ($self, $args ) = @_;
+    my $url      = $base_url . "TimeLine/getPlurks";
 
+    my $response;
+    unless( defined $args->{offset} ) {
+        $url .= qq|?user_id=@{[ $args->{user_id} ]}|;
+        $response = $self->ua->get( $url );
+    }
+    else {
+        $response = $self->ua->post( $url, {
+            user_id => $args->{user_id},
+            offset  => $args->{offset} 
+        } );
+    }
+
+    my $c = $response->decoded_content; 
+    unless( $response->is_success ) {
+        die('Fail:' . $c );
+    }
+
+    return $self->get_js_json( $c );
+}
 
 =head2 HASH_REF : fetch_plurk_responses ( STRING plurk_id )
     
@@ -148,13 +181,14 @@ sub fetch_plurks {
 
 sub fetch_plurk_responses {
     my ( $self, $plurk_id ) = @_;
-    my $url = $base_url . "responses/get2";
+    my $url = $base_url . "Responses/get2";
+    $url = 'http://www.plurk.com/Responses/get2';
     my $response = $self->ua->post( $url , {
         from_response => 0,
-        plurk_id => $plurk_id ,  #plurk id
+        plurk_id => $plurk_id ,
     });
 
-    die "post error: ", $response->status_line
+    die "post error at $url: ", $response->status_line
         unless $response->is_success;
 
     my $c = $response->decoded_content ;
@@ -173,46 +207,38 @@ sub fetch_userdata {
     return $self->get_js_json( $c );
 }
 
-sub _fetch_plurks {
+
+sub load_json_js {
     my $self = shift;
-    my $user_id = $self->settings->{user_id};
-    my $url = $base_url . "TimeLine/getPlurks?user_id=$user_id";
-    my $response = $self->ua->get( $url );
-    return unless( $response->is_success );
-    my $c = $response->decoded_content; 
-    return $self->get_js_json( $c );
+    my $rc = $self->js->eval( qq| @{[ $self->json_code  ]}; |);
+    die $@ unless( $rc );
 }
 
+sub read_json_js {
+    my $self = shift;
+    my $filename = shift || $ENV{HOME} . '/.json.js';
 
-# XXX: i would like to use JE
-sub _eval_json {
-    my ( $self, $js_code, $varname, $accessor_name ) = @_;
-    my $json_code = $self->json_code;
-    eval {
-    my $rc = $self->js->eval( qq!
-        $json_code
-        $js_code
-        var str = JSON.stringify( $varname );
-        set_accessor( "$accessor_name" ,  str );
-    !);
-    };
+    if( ! -e $filename ) {
+        die("Can not load $filename");
+    }
+
+    open my $fh, '<' , $filename ;
+    local $/;
+    my $json = <$fh>;
+    close $fh;
+    return $json;
 }
-
 
 sub get_js_json {
     my ( $self, $str ) = @_;
-
-    my $js_ret; 
-    $self->js->function_set( "set_var", sub {   
-        my ( $js_str ) = @_;
-        $js_ret = from_json( $js_str , { utf8 => 1 });
-    });
-    my $rc = $self->js->eval( qq!
-        @{[ $self->json_code  ]}
+    my $rc = $self->js->eval( qq|
         var json = $str;
-        var str = json.stringify( json );
-        set_var( str );
-    !);
+        var str = JSON.stringify( json );
+        get_json_var( str );
+    |);
+    my $js_ret = $self->{js_ret};
+    die "JS EVAL FAILED: @{[ $@ ]}" unless( $rc );
+    die "RETURN JSON OBJECT FAILED" unless( $js_ret );
     return $js_ret;
 }
 
@@ -232,21 +258,6 @@ sub _fetch_settings {
     else {
         die $response->status_line;
     }
-}
-
-sub load_json_js {
-    my $self = shift;
-    my $filename = shift || $ENV{HOME} . '/.json.js';
-
-    if( ! -e $filename ) {
-        die("Can not load $filename");
-    }
-
-    open my $fh, '<' , $filename ;
-    local $/;
-    my $json = <$fh>;
-    close $fh;
-    return $json;
 }
 
 =head1 AUTHOR
