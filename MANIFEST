@@ -5,4 +5,3 @@ README
 lib/Net/Plurk/Dumper.pm
 json.js
 t/00-load.t
-t/pod.t
