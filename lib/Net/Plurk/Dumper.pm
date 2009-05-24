@@ -2,8 +2,13 @@ package Net::Plurk::Dumper;
 use JavaScript::SpiderMonkey;
 use JSON;
 use LWP::UserAgent;
+use HTTP::Cookies;
+
+# use Moose;
+
 use base qw(Class::Accessor::Fast);
-__PACKAGE__->mk_accessors( qw(ua id settings js json_code plurks) );
+__PACKAGE__->mk_accessors( qw(ua id friends settings js json_code plurks debug) );
+
 use warnings;
 use strict;
 
@@ -52,7 +57,7 @@ to use this module.
 
 =cut
 
-my $base_url = 'http://www.plurk.com/';
+my $base_url = 'http://www.plurk.com';
 
 =head2 Net::Plurk::Dumper->new ( id => USERID )
 
@@ -65,11 +70,21 @@ sub new {
     my $js = JavaScript::SpiderMonkey->new();
     $js->init();    # Initialize Runtime/Context
 
-    my $ua = LWP::UserAgent->new;
+    my $self = $class->SUPER::new({ js => $js , %args });
+
+    my $cookie_jar = HTTP::Cookies->new(
+        file => "$ENV{HOME}/.plurk_cookies.dat",
+        autosave => 1,
+    );
+
+    my $ua = LWP::UserAgent->new( cookie_jar => $cookie_jar );
     $ua->timeout(10);
 
-    my $self = $class->SUPER::new({ js => $js , %args });
     $self->ua( $ua );
+
+    if( defined $args{id} and defined $args{password} ) {
+        $self->login( %args );
+    }
 
     $self->js->function_set( "get_json_var", sub {   
         $self->{js_ret} = from_json( $_[0] , { utf8 => 1 });
@@ -82,14 +97,36 @@ sub new {
     $self->json_code( $self->read_json_js );
     $self->load_json_js;
 
-    my $js_settings = $self->_fetch_settings;
+    $self->_init_meta;
+
+    my $js_settings = $self->_parse_settings;
     $self->js->eval(qq| 
             $js_settings;
             var str = JSON.stringify( SETTINGS );
             get_json_var(str);
     |);
     $self->settings( $self->{js_ret} );
+
+    my $js_friends  = $self->_parse_friends;
+    $self->js->eval(qq| 
+            $js_friends;
+            var str = JSON.stringify( FRIENDS );
+            get_json_var(str);
+    |);
+    $self->friends( $self->{js_ret} );
     return $self;
+}
+
+
+sub login {
+    my ($self, %args ) = @_;
+    my $res = $self->ua->post( "$base_url/Users/login" , {
+        nick_name => $args{id} ,
+        password => $args{password}
+    });
+    my $c = $res->decoded_content;
+    die('LOGIN FAILED (Please try again):' . $c) if( $c =~ m{Please try again} );
+    die('LOGIN FAILED (NOT 302):' . $c) if( $c !~ m{302 Found} );
 }
 
 =head2 LIST_REF fetch_plurks HASHREF Arguments
@@ -121,6 +158,7 @@ sub new {
 sub fetch_plurks {
     my ( $self, $args ) = @_;
     my $settings = $self->{settings};
+
     $args ||= {};
     $args->{user_id} ||= $settings->{user_id};
     return $self->_fetch_plurks($args);
@@ -128,7 +166,7 @@ sub fetch_plurks {
 
 sub _fetch_plurks {
     my ($self, $args ) = @_;
-    my $url      = $base_url . "TimeLine/getPlurks";
+    my $url      = "$base_url/TimeLine/getPlurks";
 
     my $response;
     unless( defined $args->{offset} ) {
@@ -141,12 +179,10 @@ sub _fetch_plurks {
             offset  => $args->{offset} 
         } );
     }
-
     my $c = $response->decoded_content; 
     unless( $response->is_success ) {
         die('Fail:' . $c );
     }
-
     return $self->get_js_json( $c );
 }
 
@@ -181,7 +217,7 @@ sub _fetch_plurks {
 
 sub fetch_plurk_responses {
     my ( $self, $plurk_id ) = @_;
-    my $url = $base_url . "Responses/get2";
+    my $url = "$base_url/Responses/get2";
     $url = 'http://www.plurk.com/Responses/get2';
     my $response = $self->ua->post( $url , {
         from_response => 0,
@@ -197,7 +233,7 @@ sub fetch_plurk_responses {
 
 sub fetch_userdata {
     my ( $self, $user_id ) = @_;
-    my $url = $base_url . "Users/getUserData";
+    my $url = "$base_url/Users/getUserData";
     my $response = $self->ua->post( $url , {
         page_uid => $user_id , 
     });
@@ -242,18 +278,34 @@ sub get_js_json {
     return $js_ret;
 }
 
-sub _fetch_settings {
+sub _parse_head {
     my $self = shift;
-    
-    my $url = $base_url . $self->id;
+    my $html = shift;
+    ($self->{head}) = $html =~ m{<head>(.*?)</head>}smi;
+    pos($self->{head})=0;
+}
 
+sub _parse_settings {
+    my $self = shift;
+    pos($self->{head})=0;
+    my ($js_settings) = ($self->{head} =~ m{<script.*?>.*?(var SETTINGS.*?;).*?</script>}smi );
+    return $js_settings;
+}
+
+sub _parse_friends {
+    my $self = shift;
+    pos($self->{head})=0;
+    my ($js_friends) = ($self->{head} =~ m{(var FRIENDS = .*?;)}smi);
+    return $js_friends;
+}
+
+sub _init_meta {
+    my $self = shift;
+    my $url = "$base_url/@{[$self->id]}";
     my $response = $self->ua->get( $url );
+    # warn $url if $self->debug;
     if ($response->is_success) {
-        my $c = $response->decoded_content;  # or whatever
-        my ($head) = $c =~ m{<head>(.*?)</head>}smi;
-        pos($head)=0;
-        my ($js_setting) = ($head =~ m{<script.*?>(.*?)</script>}smi );
-        return $js_setting;
+        $self->_parse_head( $response->decoded_content );
     }
     else {
         die $response->status_line;

@@ -8,9 +8,10 @@ no strict "vars";
 
 
 use Getopt::Long;
-my ( $plurk_id , $export_type );
+my ( $plurk_id , $passwd , $export_type );
 GetOptions( 
     'id=s' => \$plurk_id ,
+    'password=s' => \$passwd,
     'export=s' => \$export_type
 );
 
@@ -24,14 +25,15 @@ END
 
 binmode STDOUT,":utf8";
 
-my $p = Net::Plurk::Dumper->new( id => $plurk_id );
+my $p = Net::Plurk::Dumper->new( id => $plurk_id , password => $passwd , debug => 1 );
 my $plurks = $p->fetch_plurks;
 
 print "get " , scalar( @$plurks ) , " items \n";
 
 for my $plurk ( @$plurks ) {
 
-    print $plurk->{content_raw} . "\n";
+
+    print $plurk->{nick_name} . ": " . $plurk->{content_raw} . "\n";
 
     my $plurk_res = $p->fetch_plurk_responses( $plurk->{plurk_id} );
     my $friends = $plurk_res->{friends};
