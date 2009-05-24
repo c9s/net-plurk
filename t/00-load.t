@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 use lib 'lib';
-use Test::More tests => 3;
+use Test::More tests => 7;
 
 BEGIN {
 	use_ok( 'Net::Plurk::Dumper' );
