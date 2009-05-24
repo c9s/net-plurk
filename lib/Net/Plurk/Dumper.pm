@@ -108,9 +108,11 @@ sub new {
 =cut
 
 sub fetch_plurks {
-    my $self = shift;
+    my ( $self, $args ) = @_;
     my $settings = $self->{settings};
-    return $self->_fetch_plurks( user_id => $settings->{user_id}  ,  offset => $settings->{offset} );
+    $args->{user_id} ||= $settings->{user_id};
+    $args->{offset}  ||= $settings->{offset};
+    return $self->_fetch_plurks(%$args);
 }
 
 
