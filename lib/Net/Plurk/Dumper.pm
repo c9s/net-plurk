@@ -146,7 +146,7 @@ sub fetch_plurks {
 
 sub fetch_plurk_responses {
     my ( $self, $plurk_id ) = @_;
-    my $url = $base_url . "Responses/get2";
+    my $url = $base_url . "responses/get2";
     my $response = $self->ua->post( $url , {
         from_response => 0,
         plurk_id => $plurk_id ,  #plurk id
@@ -156,36 +156,29 @@ sub fetch_plurk_responses {
         unless $response->is_success;
 
     my $c = $response->decoded_content ;
+    return $self->get_js_json( $c );
+}
 
-    my $js_ret; 
-    $self->js->function_set( "set_var", sub {   
-        my ( $js_str ) = @_;
-        $js_ret = from_json( $js_str , { utf8 => 1 });
+sub fetch_userdata {
+    my ( $self, $user_id ) = @_;
+    my $url = $base_url . "Users/getUserData";
+    my $response = $self->ua->post( $url , {
+        page_uid => $user_id , 
     });
-
-    eval  {
-    my $rc = $self->js->eval( qq!
-        @{[ $self->json_code  ]}
-        var json = $c;
-        var str = JSON.stringify( json );
-        set_var( str );
-    !);
-    };
-
-    return $js_ret;
+    die "post error: ", $response->status_line
+        unless $response->is_success;
+    my $c = $response->decoded_content ;
+    return $self->get_js_json( $c );
 }
 
 sub _fetch_plurks {
     my $self = shift;
     my $user_id = $self->settings->{user_id};
     my $url = $base_url . "TimeLine/getPlurks?user_id=$user_id";
-    
     my $response = $self->ua->get( $url );
     return unless( $response->is_success );
-
     my $c = $response->decoded_content; 
-    $self->_eval_json("var json=$c;",'json','plurks');
-    return $self->plurks;
+    return $self->get_js_json( $c );
 }
 
 
@@ -201,6 +194,24 @@ sub _eval_json {
         set_accessor( "$accessor_name" ,  str );
     !);
     };
+}
+
+
+sub get_js_json {
+    my ( $self, $str ) = @_;
+
+    my $js_ret; 
+    $self->js->function_set( "set_var", sub {   
+        my ( $js_str ) = @_;
+        $js_ret = from_json( $js_str , { utf8 => 1 });
+    });
+    my $rc = $self->js->eval( qq!
+        @{[ $self->json_code  ]}
+        var json = $str;
+        var str = json.stringify( json );
+        set_var( str );
+    !);
+    return $js_ret;
 }
 
 sub _fetch_settings {
