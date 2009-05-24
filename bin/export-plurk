@@ -6,13 +6,16 @@ no warnings "all";
 
 
 use Getopt::Long;
-my ( $plurk_id );
-GetOptions( 'id=s' => \$plurk_id );
+my ( $plurk_id , $export_type );
+GetOptions( 
+    'id=s' => \$plurk_id ,
+    'export=s' => \$export_type
+);
 
 unless ( $plurk_id ) {
     print <<END
     Usage:  
-        perl -Ilib bin/export-plurk --id=your_plurk_id
+        perl -Ilib bin/export-plurk --id=your_plurk_id --export=xml|text|json
 
 END
 }
