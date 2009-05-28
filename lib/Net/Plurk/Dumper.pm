@@ -141,7 +141,19 @@ sub login {
     die('LOGIN FAILED (NOT 302):' . $c) if( $c !~ m{302 Found} );
 }
 
-=head2 LIST_REF fetch_plurks HASHREF Arguments
+=head2 LIST_REF fetch_self_plurks( HASHREF Arguments )
+
+    Arguments:
+        user_id 334195
+        user_ids [ 334195... ]
+
+=cut
+
+sub fetch-self_plurks {
+
+}
+
+=head2 LIST_REF fetch_plurks( HASHREF Arguments )
 
     Arguments:
         user_id:
@@ -176,8 +188,6 @@ sub fetch_plurks {
     return $self->_fetch_plurks($args);
 }
 
-# user_id 
-# user_ids [ 334195... , ]
 sub _fetch_plurks {
     my ($self, $args ) = @_;
     my $url      = "$base_url/TimeLine/getPlurks";
@@ -201,6 +211,31 @@ sub _fetch_plurks {
 }
 
 
+sub post {
+    my ($self, $args) = @_;
+    my $url = "$base_url/TimeLine/addPlurk";
+    my $response = $self->ua->post( $url , {
+            content => '',
+            lang => 'tr_ch',
+            no_comments => 0,
+            posted => '"2009-5-28T08:27:05"',
+            qualifier => ':',
+            uid => $uid,
+    });
+    die "post error: ", $response->status_line
+        unless $response->is_success;
+
+  # response
+  #  {"plurk": {"responses_seen": 0, "qualifier": ":", "plurk_id": 54991029, "response_count": 0, "limited_to"
+  #  : null, "no_comments": 0, "is_unread": 0, "lang": "tr_ch", "content_raw": "\u4eca\u5929\u4e00\u5b9a\u8981
+  #  \u904b\u52d5\u3002", "user_id": 3341956, "plurk_type": 0, "id": 54991029, "content": "\u4eca\u5929\u4e00
+  #  \u5b9a\u8981\u904b\u52d5\u3002", "posted": new Date("Thu, 28 May 2009 08:27:06 GMT"), "owner_id": 3341956
+  #  }, "error": null}
+
+}
+
+
+# XXX:
 # http://www.plurk.com/Poll/getResponsesN/3341956
 #
 # plurk_ids :
@@ -224,6 +259,7 @@ sub fetch_userdata {
     return $self->get_js_json( $c );
 }
 
+# XXX:
 # post:
 #   known_friends   
 #   ["3123451","20998","40008","3114347","3121484","21070","186992","3145970","3127252","765208","3137755"
