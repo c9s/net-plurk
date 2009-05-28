@@ -30,11 +30,11 @@ Net::Plurk::Dumper - Dump plurks
 
 =head1 VERSION
 
-Version 0.04
+Version 0.05
 
 =cut
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 =head1 SYNOPSIS
 
@@ -117,6 +117,15 @@ sub new {
             var str = JSON.stringify( SETTINGS );
             get_json_var(str);
     |);
+
+    # SETTINGS = {
+    #   "message_me": 0,
+    #   "search_me": 1, 
+    #   "global_filter": "{}",
+    #   "user_id": 3341956, 
+    #   "show_location": 1, 
+    #   "view_plurks": 2, 
+    #   "sound_mute": 0};
     $self->settings( $self->{js_ret} );
 
     my $js_friends  = $self->_parse_friends;
@@ -214,18 +223,30 @@ sub _fetch_plurks {
     return $self->get_js_json( $c );
 }
 
+=head2 post ( HASHREF $args )
 
+    $args:
+        content:        plurk content
+        lang:           tr_ch , en ... etc (default is tr_ch)
+        no_comments:    able to post comments (default is 0)
+        posted:         timestamp , eg. "2009-5-28T08:27:05"  (default is DateTime->now)
+        qualifier:      qualifier   (default is ':')
+
+=cut
+
+use DateTime;
 sub post {
     my ($self, $args) = @_;
-    my $url = "$base_url/TimeLine/addPlurk";
-    my $response = $self->ua->post( $url , {
-            content => '',
-            lang => 'tr_ch',
+    my $url      = "$base_url/TimeLine/addPlurk";
+    my $response = $self->ua->post( $url, {
+            uid         => $self->settings->{user_id},
+            lang        => 'tr_ch',
             no_comments => 0,
-            posted => '"2009-5-28T08:27:05"',
-            qualifier => ':',
-            uid => $uid,
-    });
+            posted      => '"' . DateTime->now . '"',
+            qualifier   => ':',
+            %$args
+        } );
+
     die "post error: ", $response->status_line
         unless $response->is_success;
 
@@ -235,7 +256,6 @@ sub post {
   #  \u904b\u52d5\u3002", "user_id": 3341956, "plurk_type": 0, "id": 54991029, "content": "\u4eca\u5929\u4e00
   #  \u5b9a\u8981\u904b\u52d5\u3002", "posted": new Date("Thu, 28 May 2009 08:27:06 GMT"), "owner_id": 3341956
   #  }, "error": null}
-
 }
 
 

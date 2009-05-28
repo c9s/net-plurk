@@ -51,8 +51,3 @@ for my $plurk ( @$plurks ) {
 
     }
 }
-
-
-
-
-

@@ -6,26 +6,18 @@ BEGIN {
 	use_ok( 'Net::Plurk::Dumper' );
 }
 
-
 my $p = Net::Plurk::Dumper->new( id => 'jserv' );
 ok( $p );
-my $plurks = $p->fetch_plurks;
+my $plurks = $p->get_plurks;
 ok( $plurks );
 
-use Data::Dumper::Simple;
-warn Dumper( $plurks );
-
-my $plurk_res = $p->fetch_plurk_responses( $plurks->[0]->{plurk_id} );
+my $plurk_res = $p->get_responses( $plurks->[0]->{plurk_id} );
 ok( defined $plurk_res->{responses} , 'get responses' );
 ok( defined $plurk_res->{friends}   , 'get friends' );
 
-$plurk_res = $p->fetch_plurk_responses( $plurks->[0]->{plurk_id} );
+$plurk_res = $p->get_responses( $plurks->[0]->{plurk_id} );
 ok( defined $plurk_res->{responses} , 'get responses' );
 ok( defined $plurk_res->{friends}   , 'get friends');
 
-# for my $msg ( @{ $plurk_res->{responses} } ) {
-#     ok( defined $msg->{content_raw} );
-#     warn $msg->{content_raw};
-# }
 
 
