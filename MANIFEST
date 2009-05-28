@@ -1,8 +1,10 @@
-Changes
-MANIFEST
-Makefile.PL
-README
-lib/Net/Plurk/Dumper.pm
-json.js
-t/00-load.t
+.cvsignore
 bin/export-plurk
+Changes
+json.js
+lib/Net/Plurk/Dumper.pm
+Makefile.PL
+MANIFEST
+META.yml
+README
+t/00-load.t
