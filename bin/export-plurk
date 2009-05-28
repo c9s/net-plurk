@@ -29,7 +29,7 @@ my $p_friends = $p->friends;
 
 print join("\n", keys %$p_friends );
 
-my $plurks = $p->fetch_plurks;
+my $plurks = $p->get_plurks;
 
 print "get " , scalar( @$plurks ) , " items \n";
 
@@ -38,7 +38,7 @@ for my $plurk ( @$plurks ) {
     print $plurk->{user_id};
     print  ": " . $plurk->{content_raw} . "\n";
 
-    my $plurk_res = $p->fetch_plurk_responses( $plurk->{plurk_id} );
+    my $plurk_res = $p->get_responses( $plurk->{plurk_id} );
     my $friends = $plurk_res->{friends};
 
     for my $response ( @{ $plurk_res->{responses} }  ) {

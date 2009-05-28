@@ -44,7 +44,7 @@ our $VERSION = '0.04';
             id => 'c9s'
     );
 
-    my $plurks = $p->fetch_plurks;
+    my $plurks = $p->get_plurks;
 
     for ( @$plurks ) {
         use Data::Dumper::Simple;
@@ -141,7 +141,7 @@ sub login {
     die('LOGIN FAILED (NOT 302):' . $c) if( $c !~ m{302 Found} );
 }
 
-=head2 LIST_REF fetch_self_plurks( HASHREF Arguments )
+=head2 LIST_REF get_self_plurks( HASHREF Arguments )
 
     Arguments:
         user_id 334195
@@ -153,7 +153,7 @@ sub get_self_plurks {
 
 }
 
-=head2 LIST_REF fetch_plurks( HASHREF Arguments )
+=head2 LIST_REF get_plurks( HASHREF Arguments )
 
     Arguments:
         user_id:
@@ -272,12 +272,12 @@ sub fetch_userdata {
 #{"users": {"3583618": {"display_name": "VickiChen", "uid": 3583618, "gender": 0, "nick_name": "VickiChen"
 #, "has_profile_image": 1, "id": 3583618, "avatar": "8"}, "3165699": {"display_name": "bluegina", "uid"
 #: 3165699, "gender": 0, "nick_name": "bluegi
-sub fetch_owner_profile_data {
+sub get_owner_profile_data {
     my $self = shift;
 
 }
 
-=head2 HASH_REF : fetch_plurk_responses ( STRING plurk_id )
+=head2 HASH_REF : get_responses ( STRING plurk_id )
     
     HASH_REF:
         friends: (HASH_REF)
