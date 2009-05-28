@@ -40,15 +40,22 @@ our $VERSION = '0.05';
 
     use Net::Plurk::Dumper;
 
-    my $p = Net::Plurk::Dumper->new(
-            id => 'c9s'
-    );
+    my $p = Net::Plurk::Dumper->new( 
+                id => $plurk_id , 
+                password => $passwd , 
+                debug => 1 
+            );
 
     my $plurks = $p->get_plurks;
 
-    for ( @$plurks ) {
-        use Data::Dumper::Simple;
-        warn Dumper( $_ );
+    for my $plurk ( @$plurks ) {
+
+        my $plurk_res = $p->get_responses( $plurk->{plurk_id} );
+
+        for my $response ( @{ $plurk_res->{responses} }  ) {
+            print $response->{content_raw} . "\n";
+        }
+
     }
 
 =head1 DESCRIPTIONS
@@ -138,6 +145,14 @@ sub new {
     return $self;
 }
 
+
+=head2 login( HASH %args )
+
+    %args:
+        id:  plurk id
+        passwod:  password
+
+=cut
 
 sub login {
     my ($self, %args ) = @_;
