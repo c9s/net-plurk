@@ -149,7 +149,7 @@ sub login {
 
 =cut
 
-sub fetch-self_plurks {
+sub get_self_plurks {
 
 }
 
@@ -180,6 +180,10 @@ sub fetch-self_plurks {
 =cut
 
 sub fetch_plurks {
+    die "please call get_plurks";
+}
+
+sub get_plurks {
     my ( $self, $args ) = @_;
     my $settings = $self->{settings};
 
@@ -302,7 +306,12 @@ sub fetch_owner_profile_data {
 
 =cut
 
+# XXX: old version
 sub fetch_plurk_responses {
+    die('please call get_responses');
+}
+
+sub get_responses {
     my ( $self, $plurk_id ) = @_;
     my $url = "$base_url/Responses/get2";
     $url = 'http://www.plurk.com/Responses/get2';
