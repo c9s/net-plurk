@@ -21,14 +21,18 @@ our $VERSION = '0.05';
 
 =head1 SYNOPSIS
 
-    use Net::Plurk::Dumper;
-    my $p = Net::Plurk::Dumper->new( 
-                id => $plurk_id , 
-                password => $passwd , 
-                debug => 1 
-            );
-    my @plurks = $p->get_plurks( limit => 10 );
-    my @friends = $p->get_friends();
+    my $d = Net::Plurk::Dumper->new;
+
+    $d->login( 'username' , 'password' );
+
+    my $plurks = $d->get_owner_latest_plurks();
+
+    my $data = $d->get_user_data();
+
+    my $ret = $d->add_plurk( content => "zzzzz" );
+
+    use Data::Dumper;warn Dumper( $ret );
+
 
 =head1 DESCRIPTIONS
 
@@ -48,8 +52,24 @@ sub req_json {
     my $self = shift;
     my ( $url , $param ) = @_;
     my $req  = $self->ua->post( $url , $param );
+    my $reqq = $req->request;
     my $json = $req->decoded_content;
-    return decode_json( $json );
+    # hate new Date. 
+    $json =~ s{new Date\("(.*?)"\)}{"$1"}g;
+    return decode_json( $json ) if $json =~ /^\{/;
+    return $json; # not json
+}
+
+sub req_json_get {
+    my $self = shift;
+    my ( $url , $param ) = @_;
+    my $req  = $self->ua->get( $url , $param );
+    my $reqq = $req->request;
+    my $json = $req->decoded_content;
+    # hate new Date. 
+    $json =~ s{new Date\("(.*?)"\)}{"$1"}g;
+    return decode_json( $json ) if $json =~ /^\{/;
+    return $json; # not json
 }
 
 sub new {
@@ -257,9 +277,7 @@ sub get_response_n {
     my $self = shift;
     my $user_id  = shift;
     my $ids = shift;
-    return $self->req_json(
-        'http://www.plurk.com/Poll/getResponsesN/' . $user_id , {
-            plurk_ids => join(',',@$ids ) });
+    return $self->req_json( 'http://www.plurk.com/Poll/getResponsesN/' . $user_id , { plurk_ids => join(',',@$ids ) });
 }
 
 =head2 get_user_data
@@ -312,14 +330,40 @@ sub get_user_data {
     return $self->meta->{user_data} = $json;
 }
 
-=head2 post_plurk
+=head2 add_plurk
 
+http://www.plurk.com/TimeLine/addPlurk
 
+post:
+    content	Hola
+    lang	tr_ch
+    no_comments	0
+    posted	"2009-11-12T17:40:13"
+    qualifier	:
+    uid	3341956
+
+response:
+
+    {"plurk": {"responses_seen": 0, "qualifier": ":", "plurk_id": 157706966,
+    "response_count": 0, "limited_to": null, "no_comments": 0, "is_unread": 0,
+    "lang": "tr_ch", "content_raw": "Hola", "user_id": 3341956, "plurk_type":
+    0, "id": 157706966, "content": "Hola", "posted": new Date("Thu, 12 Nov 2009
+    17:40:13 GMT"), "owner_id": 3341956}, "error": null}
 
 =cut
 
-sub post_plurk {
+sub add_plurk {
     my $self = shift;
+    my %args = @_;
+    return $self->req_json( 'http://www.plurk.com/TimeLine/addPlurk', {
+            content     => "",
+            no_comments => '0',
+            lang        => 'tr_ch',
+            posted      => '"' . DateTime->now . '"',
+            qualifier   => ':',
+            uid         => $self->meta->{settings}->{user_id},
+            %args,
+        } );
 }
 
 
