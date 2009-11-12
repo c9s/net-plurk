@@ -3,13 +3,13 @@ use JSON;
 use LWP::UserAgent;
 use HTTP::Cookies;
 use DateTime;
-use JE;
+# use JE;
 use warnings;
 use strict;
 
 =head1 NAME
 
-Net::Plurk::Dumper - Dump plurks
+Net::Plurk::Dumper - Dump plurks (or post plurk)
 
 =cut
 
