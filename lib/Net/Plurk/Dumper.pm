@@ -44,6 +44,13 @@ use constant {
     base_url => 'http://www.plurk.com',
 };
 
+
+=head2 req_json( uri , params )
+
+post parameters to plurk api , return decoded json
+
+=cut
+
 sub req_json {
     my $self = shift;
     my ( $url , $param ) = @_;
@@ -56,17 +63,11 @@ sub req_json {
     return $json; # not json
 }
 
-sub req_json_get {
-    my $self = shift;
-    my ( $url , $param ) = @_;
-    my $req  = $self->ua->get( $url , $param );
-    my $reqq = $req->request;
-    my $json = $req->decoded_content;
-    # hate new Date. 
-    $json =~ s{new Date\("(.*?)"\)}{"$1"}g;
-    return decode_json( $json ) if $json =~ /^\{/;
-    return $json; # not json
-}
+=head2 new
+
+
+
+=cut
 
 sub new {
     my $self = bless {} , shift;
@@ -78,11 +79,23 @@ sub new {
 }
 
 
+=head2 ua
+
+user agent
+
+=cut
+
 sub ua {
     my $self = shift;
     $self->{ua} = shift if @_;
     return $self->{ua};
 }
+
+=head2 login( username , password )
+
+login
+
+=cut
 
 sub login {
     my $self = shift;
