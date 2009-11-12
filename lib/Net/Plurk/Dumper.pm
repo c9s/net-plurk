@@ -44,6 +44,13 @@ use constant {
     base_url => 'http://www.plurk.com',
 };
 
+sub req_json {
+    my $self = shift;
+    my ( $url , $param ) = @_;
+    my $req  = $self->ua->post( $url , $param );
+    my $json = $req->decoded_content;
+    return decode_json( $json );
+}
 
 sub new {
     my $self = bless {} , shift;
@@ -181,6 +188,79 @@ sub get_owner_latest_plurks {
     return $plurks;
 }
 
+=head2 get_own_profile_data
+
+http://www.plurk.com/Users/getOwnProfileData
+
+=cut
+
+sub get_own_profile_data {
+    my $self = shift;
+    my $friend_ids = shift;
+    my $req = $self->ua->post( 'http://www.plurk.com/Users/getOwnProfileData' , {
+        known_friends =>  encode_json( $friend_ids ),
+    } );
+
+    my $json = $req->decoded_content;
+    return decode_json( $json );
+}
+
+
+=head2 get_response_n( user_id , plurk_ids )
+
+http://www.plurk.com/Poll/getResponsesN/3341956
+
+plurk_ids:
+
+    2lvyg8,2lvwkv,2lvvk7,2lvul7,2lvt6k ...
+
+response:
+
+        [{
+            "lang": "tr_ch",
+            "posted": new Date("Thu, 12 Nov 2009 17:22:47 GMT"),
+            "content_raw": "\u597d\u7d2f\u55da\u55b5...",
+            "responses_seen": 0,
+            "qualifier": ":",
+            "plurk_id": 157699389,
+            "response_count": 2,
+            "owner_id": 3701915,
+            "id": 157699389,
+            "content": "\u597d\u7d2f\u55da\u55b5...",
+            "user_id": 3341956,
+            "is_unread": 0,
+            "limited_to": null,
+            "no_comments": 0,
+            "plurk_type": 0
+        },
+        {
+            "lang": "tr_ch",
+            "posted": new Date("Wed, 11 Nov 2009 12:31:36 GMT"),
+            "content_raw": "\u6211\u559c\u6b61\u9019\u7db2\u7ad9   http:\/\/www.jldesign.tv\/",
+            "user_id": 3341956,
+            "plurk_type": 0,
+            "plurk_id": 156732836,
+            "response_count": 2,
+            "owner_id": 4024314,
+            "no_comments": 0,
+            "content": "\u6211\u559c\u6b61\u9019\u7db2\u7ad9   <a href=\"http:\/\/www.jldesign.tv\/\" class=\"ex_link\" rel=\"nofollow\">www.jldesign.tv\/<\/a>",
+            "responses_seen": 0,
+            "is_unread": 0,
+            "limited_to": null,
+            "id": 156732836,
+            "qualifier": "is"
+        }]
+
+=cut
+
+sub get_response_n {
+    my $self = shift;
+    my $user_id  = shift;
+    my $ids = shift;
+    return $self->req_json(
+        'http://www.plurk.com/Poll/getResponsesN/' . $user_id , {
+            plurk_ids => join(',',@$ids ) });
+}
 
 =head2 get_user_data
 
