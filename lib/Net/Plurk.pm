@@ -1,4 +1,4 @@
-package Net::Plurk::Dumper;
+package Net::Plurk;
 use JSON;
 use LWP::UserAgent;
 use HTTP::Cookies;
@@ -9,7 +9,7 @@ use strict;
 
 =head1 NAME
 
-Net::Plurk::Dumper - Dump plurks (or post plurk)
+Net::Plurk - Dump plurks (or post plurk)
 
 =cut
 
@@ -17,7 +17,7 @@ our $VERSION = '0.1';
 
 =head1 SYNOPSIS
 
-    my $d = Net::Plurk::Dumper->new;
+    my $d = Net::Plurk->new;
 
     $d->login( 'username' , 'password' );
 
@@ -27,7 +27,7 @@ our $VERSION = '0.1';
 
     my $ret = $d->add_plurk( content => "zzzzz" );
 
-    use Data::Dumper;warn Dumper( $ret );
+    use Data;warn Dumper( $ret );
 
 
 =head1 DESCRIPTIONS
@@ -391,7 +391,7 @@ automatically be notified of progress on your bug as I make changes.
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Net::Plurk::Dumper
+    perldoc Net::Plurk
 
 You can also look for information at:
 
