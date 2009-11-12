@@ -1,8 +1,8 @@
 use inc::Module::Install;
 use strict;
 use warnings;
-name           'Net-Plurk-Dumper';
-all_from       'lib/Net/Plurk/Dumper.pm';
+name           'Net-Plurk';
+all_from       'lib/Net/Plurk.pm';
 
 requires(
     'Test::More'               => 0,
