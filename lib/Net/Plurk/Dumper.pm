@@ -1,26 +1,9 @@
 package Net::Plurk::Dumper;
-use JavaScript::SpiderMonkey;
 use JSON;
 use LWP::UserAgent;
 use HTTP::Cookies;
-
-use Moose;
-
-# use base qw(Class::Accessor::Fast);
-# __PACKAGE__->mk_accessors( qw(id json_code debug) );
-
-# Moose::Util::TypeConstraints
-
-has 'id'        => ( is => 'rw', isa => 'Str' );
-has 'json_code' => ( is => 'rw', isa => 'Str' );
-has 'debug'     => ( is => 'rw', isa => 'Bool' );
-
-has 'ua' => ( is => 'rw', isa => 'LWP::UserAgent' );
-has 'js' => ( is => 'rw', isa => 'JavaScript::SpiderMonkey' );
-
-has 'friends'  => ( is => 'rw', isa => 'HashRef' );
-has 'settings' => ( is => 'rw', isa => 'HashRef' );
-
+use DateTime;
+use JE;
 use warnings;
 use strict;
 
@@ -62,6 +45,134 @@ use constant {
 };
 
 
+sub new {
+    my $self = bless {} , shift;
+    my $cookie_jar = HTTP::Cookies->new( file => "$ENV{HOME}/lwp_cookies.dat", autosave => 1 );
+    my $ua = LWP::UserAgent->new( cookie_jar => $cookie_jar );
+
+    $self->ua( $ua );
+    return $self;
+}
+
+
+sub ua {
+    my $self = shift;
+    $self->{ua} = shift if @_;
+    return $self->{ua};
+}
+
+sub login {
+    my $self = shift;
+    my $nick = shift;
+    my $pass = shift;
+    my $res = $self->ua->post( base_url . '/Users/login' , {
+        nick_name => $nick,
+        password => $pass,
+    });
+
+    my $c = $res->decoded_content;
+    $res = $self->ua->get( base_url . '/' . $nick );
+
+    my $meta;
+    if ($res->is_success) {
+        $meta = $self->_parse_head( $res->decoded_content );
+    }
+    else {
+        warn $res->status_line;
+        return 0;
+    }
+    return $meta;
+}
+
+=head2 _parse_head
+
+meta:
+
+    settings => {
+          'global_filter' => '{}',
+          'sound_mute' => 1,
+          'show_location' => 1,
+          'search_me' => 1,
+          'view_plurks' => 0,
+          'message_me' => 0,
+          'user_id' => 3341956
+    };
+
+
+    friends => [ '3156986' => {
+                         'timezone' => undef,
+                         'location' => 'Taipei, Taiwan',
+                         'uid' => 3156986,
+                         'avatar' => 0,
+                         'nick_name' => 'fourdollars',
+                         'full_name' => 'Shih-Yuan Lee (FourDollars)',
+                         'has_profile_image' => 1,
+                         'display_name' => "\x{56db}\x{584a}\x{9322}",
+                         'karma' => '88.25',
+                         'id' => 3156986,
+                         'gender' => 1
+                       }, ... ]
+
+=cut
+
+sub _parse_head {
+    my $self = shift;
+    my $content = shift;
+    my ($head) = ( $content =~ m{<head>(.*?)</head>}smi );
+    my ($settings_string) = ( $head =~ m{var SETTINGS =\s*(\{.*?\});}smi );
+    my ($friends_string)  = ( $head =~ m{var FRIENDS =\s*(.*?\});}smi );
+    my ($fans_string)     = ( $head =~ m{var FANS =\s*(.*?\});}smi );
+
+    my $settings = decode_json($settings_string);
+    my $friends  = decode_json($friends_string);
+    my $fans     = decode_json($fans_string);
+
+    return $self->{meta} = {
+        settings => $settings,
+        friends => $friends,
+        fans => $fans,
+    };
+}
+
+sub meta { return $_[0]->{meta} };
+
+=head2 get_owner_latest_plurks
+
+plurk format: 
+
+        [{
+            'plurk_type' => 0,
+            'lang' => 'tr_ch',
+            'content' => "Miyagawa \x{5beb}\x{7684}  <a href=\"http://github.com/miyagawa/github-growler\" class=\"ex_link\" rel=\"nofollow\">github-growler</a>",
+            'plurk_id' => 154287425,
+            'responses_seen' => 0,
+            'no_comments' => 0,
+            'response_count' => 0,
+            'limited_to' => undef,
+            'content_raw' => "Miyagawa \x{5beb}\x{7684}  http://github.com/miyagawa/github-growler (github-growler)",
+            'qualifier' => ':',
+            'posted' => 'Sun, 08 Nov 2009 05:49:40 GMT',
+            'is_unread' => 0,
+            'owner_id' => 3341956,
+            'id' => 154287425,
+            'user_id' => 3341956
+          } ,  .... ]
+
+=cut
+
+sub get_owner_latest_plurks {
+    my $self = shift;
+
+    my $now = DateTime->now;
+    my $res = $self->ua->post('http://www.plurk.com/TimeLine/getPlurks',  {
+        offset  => qq{"$now"},
+        user_id => $self->meta->{settings}->{user_id},
+    });
+    my $json = $res->decoded_content;
+    $json =~ s{new Date\("(.*?)"\)}{"$1"}g;
+    my $plurks = decode_json( $json );
+    return $plurks;
+}
 
 
 =head1 AUTHOR
