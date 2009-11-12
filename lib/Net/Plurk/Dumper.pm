@@ -113,6 +113,7 @@ meta:
                          'gender' => 1
                        }, ... ]
 
+
 =cut
 
 sub _parse_head {
@@ -133,6 +134,12 @@ sub _parse_head {
         fans => $fans,
     };
 }
+
+=head2 meta
+
+return meta data hashref , which contains settings , friends , fans data.
+
+=cut
 
 sub meta { return $_[0]->{meta} };
 
@@ -173,6 +180,68 @@ sub get_owner_latest_plurks {
     my $plurks = decode_json( $json );
     return $plurks;
 }
+
+
+=head2 get_user_data
+
+http://www.plurk.com/Users/getUserData
+
+post:
+        page_uid	3341956
+
+response:
+
+        {
+        "num_of_fans": 178,
+        "invite_url": "http:\/\/www.plurk.com\/c9s\/invite",
+        "is_friend": false,
+        "cliques": [{
+            "user_id": 3341956,
+            "friends": "|3173618||3168852||3158365||3137755||186992||3457834||3294830||3389620||3539966||3453719||3289766||3961080|",
+            "name": "Geeks"
+        },
+        {
+            "user_id": 3341956,
+            "friends": "|3137755||3332446||3265130||900477||3177902||3185157||3160092||1558140||3367439||3376036||765208||753660||3514076||3210573||3631135||3422497||273546||3537112||3638713||3425595||3755142||3121484||3542124||3165008||3459057||3787337||3496909||3650383||3206900||3777181||241405||3578960||3686964||4123117||3349034||3481782||3145171||193136||4106788||4593464|",
+            "name": "Girls"
+        },
+        {
+            "user_id": 3341956,
+            "friends": "|3289766||3173618||3160092||3626549||3326111||3158366|",
+            "name": "SA"
+        }],
+        "num_of_friends": 220,
+        "is_warned": false,
+        "fans": [],
+        "can_follow": true,
+        "has_facebook": false,
+        "friend_status": 0,
+        "is_following": false,
+        "show_inivted_guide": false,
+        "friends": []
+        }
+
+=cut
+
+sub get_user_data {
+    my $self = shift;
+    return $self->meta->{user_data} if $self->meta->{user_data};
+    my $req = $self->ua->post( 'http://www.plurk.com/Users/getUserData' , { page_uid => $self->meta->{settings}->{user_id}, });
+    my $response = $req->decoded_content;
+    my $json = decode_json ( $response );
+    return $self->meta->{user_data} = $json;
+}
+
+=head2 post_plurk
+
+
+
+=cut
+
+sub post_plurk {
+    my $self = shift;
+}
+
 
 
 =head1 AUTHOR
