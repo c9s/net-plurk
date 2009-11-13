@@ -9,9 +9,8 @@ inc/Module/Install/Makefile.pm
 inc/Module/Install/Metadata.pm
 inc/Module/Install/Win32.pm
 inc/Module/Install/WriteAll.pm
-json.js
-lib/Net/Plurk/Dumper.pm
+lib/Net/Plurk.pm
 Makefile.PL
 MANIFEST
 META.yml
-README
+t/00-load.t
