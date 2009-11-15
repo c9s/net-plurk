@@ -57,7 +57,7 @@ sub req_json {
     my $req  = $self->ua->post( $url , $param );
     my $reqq = $req->request;
     my $json = $req->decoded_content;
-    # hate new Date. 
+    # hate new Date.
     $json =~ s{new Date\("(.*?)"\)}{"$1"}g;
     return decode_json( $json ) if $json =~ /^\{/;
     return $json; # not json
@@ -181,7 +181,7 @@ sub meta { return $_[0]->{meta} };
 
 =head2 get_owner_latest_plurks
 
-plurk format: 
+plurk format:
 
         [{
             'plurk_type' => 0,
@@ -217,6 +217,27 @@ sub get_owner_latest_plurks {
     return $plurks;
 }
 
+sub get_unread_plurks {
+    my $self = shift;
+
+    my $now = DateTime->now;
+    my $res = $self->ua->post('http://www.plurk.com/Users/getUnreadPlurks', {
+        # This tess plurk.com to include all required user info in the response.
+        known_friends => "[]"
+    });
+    my $json = $res->decoded_content;
+    $json =~ s{new Date\("(.*?)"\)}{"$1"}g;
+    my $response = decode_json( $json );
+
+    my $plurks = $response->{unread_plurks};
+    # Join plurk user info.
+    for my $pu (@$plurks) {
+        $pu->{owner} = $response->{users}{$pu->{owner_id}};
+    }
+
+    return $plurks;
+}
+
 =head2 get_own_profile_data
 
 http://www.plurk.com/Users/getOwnProfileData
@@ -228,9 +249,10 @@ sub get_own_profile_data {
     my $friend_ids = shift;
     my $req = $self->ua->post( 'http://www.plurk.com/Users/getOwnProfileData' , {
         known_friends =>  encode_json( $friend_ids ),
-    } );
+    });
 
     my $json = $req->decoded_content;
+    $json =~ s{new Date\("(.*?)"\)}{"$1"}g;
     return decode_json( $json );
 }
 
