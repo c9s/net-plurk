@@ -1,0 +1,11 @@
+*~
+MANIFEST.bak
+META.yml
+Makefile.old
+inc/
+Makefile
+cover_db/
+covered/
+blib
+pm_to_blib
+
