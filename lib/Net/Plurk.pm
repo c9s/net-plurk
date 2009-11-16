@@ -29,10 +29,6 @@ our $VERSION = 1258388580.764044 ;
 
 =head1 DESCRIPTIONS
 
-=head1 Accessors
-
-=head2 settings
-
 =head1 FUNCTIONS
 
 =cut
@@ -70,8 +66,6 @@ sub req_json {
 
 =head2 new
 
-
-
 =cut
 
 sub new {
@@ -95,6 +89,10 @@ sub ua {
     return $self->{ua};
 }
 
+
+=head2 post( request path , arguments )
+
+=cut
 
 sub post {
     my $self = shift;
