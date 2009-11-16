@@ -12,6 +12,10 @@ requires(
     'DateTime::Tiny' => 0,
     'common::sense'  => 0,
 );
+
+test_requires
+    "Text::Greeking::zh_TW" => "0.0.4";
+
 license 'perl';
 # install_script 'myscript';
 WriteAll;
