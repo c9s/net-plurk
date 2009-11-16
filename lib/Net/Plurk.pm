@@ -222,7 +222,7 @@ sub get_unread_plurks {
 
     my $now = DateTime->now;
     my $res = $self->ua->post('http://www.plurk.com/Users/getUnreadPlurks', {
-        # This tess plurk.com to include all required user info in the response.
+        # This tell plurk.com to include all required user info in the response.
         known_friends => "[]"
     });
     my $json = $res->decoded_content;
