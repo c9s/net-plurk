@@ -230,7 +230,15 @@ sub get_owner_latest_plurks {
         user_id => $self->meta->{settings}->{user_id}
     });
 
-    return decode_json($res->decoded_content);
+    my $plurks = decode_json($res->decoded_content);
+
+    # Join plurk user info.
+    my $users = $self->{heap}{users};
+    for my $pu (@$plurks) {
+        $pu->{owner} = $users->{$pu->{owner_id}} if $users->{$pu->{owner_id}};
+    }
+
+    return $plurks;
 }
 
 sub get_unread_plurks {
@@ -246,8 +254,9 @@ sub get_unread_plurks {
     my $plurks = $response->{unread_plurks};
 
     # Join plurk user info.
+    my $users = $self->{heap}{users};
     for my $pu (@$plurks) {
-        $pu->{owner} = $response->{users}{$pu->{owner_id}};
+        $pu->{owner} = $users->{$pu->{owner_id}} if $users->{$pu->{owner_id}};
     }
 
     return $plurks;
