@@ -18,9 +18,17 @@ my $data = $p->get_own_profile_data;
 is(ref($data), "HASH");
 
 is(ref($data->{users}), "HASH");
-
 is(ref($data->{unread_plurks}), "ARRAY");
-
 is(ref($data->{plurks}), "ARRAY");
+
+is(ref($p->{heap}{users}), "HASH");
+
+for(keys %{$data->{users}}) {
+    is_deeply(
+        $p->{heap}{users}{$_},
+        $data->{users}{$_},
+        "user info is merged into the heap"
+    );
+}
 
 done_testing;

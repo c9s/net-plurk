@@ -56,8 +56,16 @@ sub req_json {
     my $req  = $self->ua->post( $url , $param );
 
     my $json = $req->decoded_content;
-    return decode_json( $json ) if $json =~ /^\{/;
-    return $json; # not json
+
+    my $data = decode_json( $json );
+
+    if (ref($data->{users}) eq "HASH") {
+        while (my ($k, $v) = each %{ $data->{users} }) {
+            $self->{heap}{users}{$k} = $v;
+        }
+    }
+
+    return $data;
 }
 
 =head2 new
@@ -70,6 +78,7 @@ sub new {
     my $self = bless {} , shift;
     my $ua = LWP::UserAgent->new( cookie_jar => {} );
     $self->ua( $ua );
+    $self->{heap} = {};
     return $self;
 }
 
@@ -229,8 +238,6 @@ sub get_unread_plurks {
 
     my $response  = $self->req_json(
         '/Users/getUnreadPlurks' => {
-            offset  => "". DateTime::Tiny->now,
-
             # This tells plurk.com to include all required user info in the response.
             known_friends => "[]"
         }
