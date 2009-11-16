@@ -406,18 +406,41 @@ response:
 sub add_plurk {
     my $self = shift;
     my %args = @_;
-    return $self->req_json( base_url . '/TimeLine/addPlurk', {
-            content     => "",
-            no_comments => '0',
-            lang        => 'tr_ch',
-            posted      => '"' . DateTime::Tiny->now . '"',
-            qualifier   => ':',
-            uid         => $self->meta->{settings}->{user_id},
-            %args,
-        } );
+
+    $self->req_json('/TimeLine/addPlurk', {
+        content     => "",
+        no_comments => '0',
+        lang        => 'tr_ch',
+        posted      => '"' . DateTime::Tiny->now . '"',
+        qualifier   => ':',
+        uid         => $self->meta->{settings}->{user_id},
+        %args,
+    });
 }
 
 
+=head2 delete_plurk( $plurk_id )
+
+http://www.plurk.com/TimeLine/addPlurk
+
+post:
+    plurk_id: 160357721
+
+response (not json):
+
+    "ok"
+
+=cut
+
+sub delete_plurk {
+    my $self = shift;
+    my $id   = shift;
+
+    return unless $id;
+    my $r = $self->post('/TimeLine/deletePlurk', { plurk_id => $id });
+
+    return $r->decoded_content;
+}
 
 =head1 AUTHOR
 
