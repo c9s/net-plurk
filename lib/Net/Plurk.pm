@@ -2,7 +2,6 @@ package Net::Plurk;
 use common::sense;
 use JSON ();
 use LWP::UserAgent;
-use HTTP::Cookies;
 use DateTime::Tiny;
 
 =head1 NAME
@@ -69,9 +68,7 @@ sub req_json {
 
 sub new {
     my $self = bless {} , shift;
-    my $cookie_jar = HTTP::Cookies->new( file => "$ENV{HOME}/lwp_cookies.dat", autosave => 1 );
-    my $ua = LWP::UserAgent->new( cookie_jar => $cookie_jar );
-
+    my $ua = LWP::UserAgent->new( cookie_jar => {} );
     $self->ua( $ua );
     return $self;
 }
@@ -79,7 +76,7 @@ sub new {
 
 =head2 ua
 
-user agent
+User agent, a LWP::UserAgent object.
 
 =cut
 
