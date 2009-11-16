@@ -11,14 +11,15 @@ unless ($ENV{NET_PLURK_TEST}) {
 my ($username, $password) = split " ", $ENV{NET_PLURK_TEST};
 
 my $p = Net::Plurk->new;
-$p->login(username => $username, password => $password);
+$p->login($username, $password);
 
 my $plurks = $p->get_owner_latest_plurks;
 
 is(ref($plurks), "ARRAY", "The return value of get_unread_plurks is an arrayref of plurks");
 
-for(@$plurks) {
+for (@$plurks) {
     is(ref($_), "HASH", "... this plurk is a hash");
+
  TODO: {
         local $TODO = "Join owner info";
         is(ref($_->{owner}), "HASH", "... this plurk joins 'owner' info as a hash");
