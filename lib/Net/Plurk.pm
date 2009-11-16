@@ -13,7 +13,7 @@ Net::Plurk - Dump plurks (or post plurk)
 
 =cut
 
-our $VERSION = 1258141140.282039 ;
+our $VERSION = 1258308569.409709 ;
 
 =head1 SYNOPSIS
 
