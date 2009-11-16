@@ -89,6 +89,14 @@ sub ua {
     return $self->{ua};
 }
 
+
+sub post {
+    my $self = shift;
+    my $path = shift;
+    $self->ua->post(base_url . $path, @_);
+}
+
+
 =head2 login( username , password )
 
 login
@@ -99,7 +107,8 @@ sub login {
     my $self = shift;
     my $nick = shift;
     my $pass = shift;
-    my $res = $self->ua->post( base_url . '/Users/login' , {
+
+    my $res = $self->post('/Users/login' , {
         nick_name => $nick,
         password => $pass,
     });
@@ -205,9 +214,9 @@ sub get_owner_latest_plurks {
     my $self = shift;
 
     my $now = DateTime::Tiny->now;
-    my $res = $self->ua->post('http://www.plurk.com/TimeLine/getPlurks',  {
+    my $res = $self->post('/TimeLine/getPlurks',  {
         offset  => qq{"$now"},
-        user_id => $self->meta->{settings}->{user_id},
+        user_id => $self->meta->{settings}->{user_id}
     });
     my $json = $res->decoded_content;
     $json =~ s{new Date\("(.*?)"\)}{"$1"}g;
@@ -219,7 +228,7 @@ sub get_unread_plurks {
     my $self = shift;
 
     my $now = DateTime::Tiny->now;
-    my $res = $self->ua->post('http://www.plurk.com/Users/getUnreadPlurks', {
+    my $res = $self->post('/Users/getUnreadPlurks', {
         # This tell plurk.com to include all required user info in the response.
         known_friends => "[]"
     });
@@ -245,7 +254,7 @@ http://www.plurk.com/Users/getOwnProfileData
 sub get_own_profile_data {
     my $self = shift;
     my $friend_ids = shift;
-    my $req = $self->ua->post( 'http://www.plurk.com/Users/getOwnProfileData' , {
+    my $req = $self->post('/Users/getOwnProfileData' , {
         known_friends =>  encode_json( $friend_ids ),
     });
 
