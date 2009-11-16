@@ -12,7 +12,7 @@ unless ($ENV{NET_PLURK_TEST}) {
 my ($username, $password) = split " ", $ENV{NET_PLURK_TEST};
 
 my $p = Net::Plurk->new;
-$p->login(username => $username, password => $password);
+$p->login($username, $password);
 
 my $plurks = $p->get_unread_plurks;
 
