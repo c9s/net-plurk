@@ -1,11 +1,9 @@
 package Net::Plurk;
+use common::sense;
 use JSON;
 use LWP::UserAgent;
 use HTTP::Cookies;
-use DateTime;
-# use JE;
-use warnings;
-use strict;
+use DateTime::Tiny;
 
 =head1 NAME
 
@@ -206,7 +204,7 @@ plurk format:
 sub get_owner_latest_plurks {
     my $self = shift;
 
-    my $now = DateTime->now;
+    my $now = DateTime::Tiny->now;
     my $res = $self->ua->post('http://www.plurk.com/TimeLine/getPlurks',  {
         offset  => qq{"$now"},
         user_id => $self->meta->{settings}->{user_id},
@@ -220,7 +218,7 @@ sub get_owner_latest_plurks {
 sub get_unread_plurks {
     my $self = shift;
 
-    my $now = DateTime->now;
+    my $now = DateTime::Tiny->now;
     my $res = $self->ua->post('http://www.plurk.com/Users/getUnreadPlurks', {
         # This tell plurk.com to include all required user info in the response.
         known_friends => "[]"
@@ -386,11 +384,11 @@ response:
 sub add_plurk {
     my $self = shift;
     my %args = @_;
-    return $self->req_json( 'http://www.plurk.com/TimeLine/addPlurk', {
+    return $self->req_json( base_url . '/TimeLine/addPlurk', {
             content     => "",
             no_comments => '0',
             lang        => 'tr_ch',
-            posted      => '"' . DateTime->now . '"',
+            posted      => '"' . DateTime::Tiny->now . '"',
             qualifier   => ':',
             uid         => $self->meta->{settings}->{user_id},
             %args,
