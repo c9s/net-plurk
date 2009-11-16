@@ -6,11 +6,11 @@ use DateTime::Tiny;
 
 =head1 NAME
 
-Net::Plurk - Dump plurks (or post plurk)
+Net::Plurk - Plurk API
 
 =cut
 
-our $VERSION = 1258308569.409709 ;
+our $VERSION = 1258388580.764044 ;
 
 =head1 SYNOPSIS
 
