@@ -1,6 +1,6 @@
 package Net::Plurk;
 use common::sense;
-use JSON;
+use JSON ();
 use LWP::UserAgent;
 use HTTP::Cookies;
 use DateTime::Tiny;
@@ -52,11 +52,11 @@ post parameters to plurk api , return decoded json
 sub req_json {
     my $self = shift;
     my ( $url , $param ) = @_;
+
+    $url = base_url . $url unless $url =~ /^http:/;
     my $req  = $self->ua->post( $url , $param );
-    my $reqq = $req->request;
+
     my $json = $req->decoded_content;
-    # hate new Date.
-    $json =~ s{new Date\("(.*?)"\)}{"$1"}g;
     return decode_json( $json ) if $json =~ /^\{/;
     return $json; # not json
 }
@@ -96,6 +96,11 @@ sub post {
     $self->ua->post(base_url . $path, @_);
 }
 
+sub decode_json($) {
+    my $json = shift;
+    $json =~ s{new Date\("(.*?)"\)}{"$1"}g;
+    JSON::decode_json($json);
+}
 
 =head2 login( username , password )
 
@@ -218,25 +223,24 @@ sub get_owner_latest_plurks {
         offset  => qq{"$now"},
         user_id => $self->meta->{settings}->{user_id}
     });
-    my $json = $res->decoded_content;
-    $json =~ s{new Date\("(.*?)"\)}{"$1"}g;
-    my $plurks = decode_json( $json );
-    return $plurks;
+
+    return decode_json($res->decoded_content);
 }
 
 sub get_unread_plurks {
     my $self = shift;
 
-    my $now = DateTime::Tiny->now;
-    my $res = $self->post('/Users/getUnreadPlurks', {
-        # This tell plurk.com to include all required user info in the response.
-        known_friends => "[]"
-    });
-    my $json = $res->decoded_content;
-    $json =~ s{new Date\("(.*?)"\)}{"$1"}g;
-    my $response = decode_json( $json );
+    my $response  = $self->req_json(
+        '/Users/getUnreadPlurks' => {
+            offset  => "". DateTime::Tiny->now,
+
+            # This tells plurk.com to include all required user info in the response.
+            known_friends => "[]"
+        }
+    );
 
     my $plurks = $response->{unread_plurks};
+
     # Join plurk user info.
     for my $pu (@$plurks) {
         $pu->{owner} = $response->{users}{$pu->{owner_id}};
@@ -258,9 +262,7 @@ sub get_own_profile_data {
         known_friends =>  encode_json( $friend_ids ),
     });
 
-    my $json = $req->decoded_content;
-    $json =~ s{new Date\("(.*?)"\)}{"$1"}g;
-    return decode_json( $json );
+    return decode_json $req->decoded_content;
 }
 
 
