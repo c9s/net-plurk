@@ -1,6 +1,6 @@
 package Net::Plurk;
 use common::sense;
-use JSON ();
+use JSON qw(encode_json);
 use LWP::UserAgent;
 use DateTime::Tiny;
 
@@ -254,14 +254,12 @@ http://www.plurk.com/Users/getOwnProfileData
 
 sub get_own_profile_data {
     my $self = shift;
-    my $friend_ids = shift;
-    my $req = $self->post('/Users/getOwnProfileData' , {
+    my $friend_ids = shift || [];
+
+    $self->req_json('/Users/getOwnProfileData' => {
         known_friends =>  encode_json( $friend_ids ),
     });
-
-    return decode_json $req->decoded_content;
 }
-
 
 =head2 get_response_n( user_id , plurk_ids )
 
