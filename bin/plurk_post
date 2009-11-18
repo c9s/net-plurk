@@ -1,17 +1,29 @@
-
-use GetOpt::Long;
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use Getopt::Long;
 use Net::Plurk;
-my $d = Net::Plurk->new;
 
 my $user;
 my $pass;
 my $content;
+my $file;
 GetOptions(
     "user=s" => \$user,
     "pass=s" => \$pass,
     "content=s" => \$content,
+    "file=s" => $file,
 );
 
+if ( -e $file )
+{
+    local $/;
+    open FH,"<", $file;
+    $content = <FH>;
+    close FH;
+}
+
+my $d = Net::Plurk->new;
 $d->login( $user , $pass );
 my $ret = $d->add_plurk( content => $content );
 print "Posted.";
