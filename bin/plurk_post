@@ -1,0 +1,17 @@
+
+use GetOpt::Long;
+use Net::Plurk;
+my $d = Net::Plurk->new;
+
+my $user;
+my $pass;
+my $content;
+GetOptions(
+    "user=s" => \$user,
+    "pass=s" => \$pass,
+    "content=s" => \$content,
+);
+
+$d->login( $user , $pass );
+my $ret = $d->add_plurk( content => $content );
+print "Posted.";

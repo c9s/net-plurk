@@ -17,5 +17,5 @@ test_requires
     "Text::Greeking::zh_TW" => "0.0.4";
 
 license 'perl';
-# install_script 'myscript';
+install_script 'bin/plurk_post';
 WriteAll;

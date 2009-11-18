@@ -10,7 +10,7 @@ Net::Plurk - Plurk API
 
 =cut
 
-our $VERSION = 09.321.15;
+our $VERSION = 9.32115 ;
 
 =head1 SYNOPSIS
 
